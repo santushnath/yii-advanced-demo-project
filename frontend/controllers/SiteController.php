@@ -1,8 +1,10 @@
 <?php
 namespace frontend\controllers;
 
+use backend\models\Products;
 use Yii;
 use yii\base\InvalidArgumentException;
+use yii\data\ActiveDataProvider;
 use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
@@ -18,6 +20,7 @@ use frontend\models\ContactForm;
  */
 class SiteController extends Controller
 {
+    public $enableCsrfValidation = false;
     /**
      * {@inheritdoc}
      */
@@ -72,7 +75,38 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $products = new ActiveDataProvider(['query' => Products::find()->where(['status' => 1])->orderBy('created_at DESC'),
+            'pagination' => [
+                'pageSize' => 3
+            ]
+            ]);
+
+        $data = [
+            'products' => $products
+        ];
+        return $this->render('index', $data);
+    }
+
+    /**
+     * Displays cart.
+     *
+     * @return mixed
+     */
+    public function actionCart()
+    {
+        $session = Yii::$app->session;
+//        $session['cart'] = [];
+        $pid = $session['cart'];
+        if (isset($_POST['pid'])) {
+            $pid[] = $_POST['pid'];
+            $session['cart'] = $pid;
+        }
+        $carts = Products::find()->where(['id' => $session['cart']])->all();
+
+        $data = [
+            'carts' => $carts
+        ];
+        return $this->render('cart', $data);
     }
 
     /**
