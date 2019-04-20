@@ -2,6 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\DetailView;
+use yii\helpers\Url;
 
 /* @var $this yii\web\View */
 /* @var $model backend\models\Products */
@@ -46,5 +47,13 @@ $this->params['breadcrumbs'][] = $this->title;
             'updated_at',
         ],
     ]) ?>
+
+    <ul class="nav nav-tabs border-0">
+        <?php foreach ($model->pictures as $picture) : ?>
+            <li class="p-3 border mr-1 mb-1">
+                <?= $picture->image ?>
+            </li>
+        <?php endforeach;?>
+    </ul>
 
 </div>

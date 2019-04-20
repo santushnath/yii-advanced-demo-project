@@ -2,14 +2,17 @@
 
 namespace backend\controllers;
 
+use backend\models\Pictures;
 use Yii;
 use backend\models\Products;
 use backend\models\ProductsSearch;
 use yii\filters\AccessControl;
+use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\web\UploadedFile;
+use yii\helpers\Url;
 
 /**
  * ProductsController implements the CRUD actions for Products model.
@@ -86,8 +89,12 @@ class ProductsController extends Controller
             $imageFile = UploadedFile::getInstance($model, 'image');
             $imageName = '';
             if(isset($imageFile->size)) {
-                $imageName = $imageFile->baseName.'.'.$imageFile->extension;
-                $imageFile->saveAs('uploads/' . $imageName);
+                if (!file_exists(Url::to('@webfront/images/products'))) {
+                    mkdir(Url::to('@webfront/images/products/'), 0777, true);
+                }
+                $imageName = $imageFile->baseName.'_'.rand(1, 100).'.'.$imageFile->extension;
+                $imageLink = Url::to('@webfront/images/products/').'/'.$imageName;
+                $imageFile->saveAs($imageLink);
             }
             $model->user_email = $auth_user->identity->email;
             $model->ikey = time().rand(1, 100);
@@ -99,6 +106,37 @@ class ProductsController extends Controller
         return $this->render('create', [
             'model' => $model,
         ]);
+    }
+
+    public function actionMultiple()
+    {
+        $upload = new Pictures();
+        $products = Products::find()->where(['status' => 1])->all();
+
+        if ($upload->load(Yii::$app->request->post())) {
+            $upload->image = UploadedFile::getInstances($upload, 'image');
+            if ($upload->image && $upload->validate()) {
+                if (!file_exists(Url::to('@webfront/images/products'))) {
+                    mkdir(Url::to('@webfront/images/products/'), 0777, true);
+                }
+                $path = Url::to('@webfront/images/products/');
+                foreach ($upload->image as $image) {
+                    $model = new Pictures();
+                    $model->product_id = $upload->product_id;
+                    $model->image = time().rand(100, 999).'.'.$image->extension;
+                    if ($model->save(false)) {
+                        $image->saveAs($path.$model->image);
+                    }
+                }
+                return $this->redirect(['index']);
+            }
+        }
+
+        $data = [
+            'upload' => $upload,
+            'products' => ArrayHelper::map($products, 'id', 'name')
+        ];
+        return $this->render('multiple', $data);
     }
 
     /**
@@ -118,13 +156,15 @@ class ProductsController extends Controller
             $imageName = '';
             if(isset($imageFile->size)) {
                 if( $model->image ) {
-                    unlink(getcwd().'/uploads/'.$model->image);
+                    unlink(Url::to('@webfront/images/products/').'/'.$model->image);
                 }
-                $imageName = $imageFile->baseName.'.'.$imageFile->extension;
-                $imageFile->saveAs('uploads/' . $imageName);
+                if (!file_exists(Url::to('@webfront/images/products'))) {
+                    mkdir(Url::to('@webfront/images/products/'), 0777, true);
+                }
+                $imageName = $imageFile->baseName.'_'.rand(1, 100).'.'.$imageFile->extension;
+                $imageLink = Url::to('@webfront/images/products/').'/'.$imageName;
+                $imageFile->saveAs($imageLink);
             }
-            $model->user_email = $auth_user->identity->email;
-            $model->ikey = time().rand(1, 100);
             $model->image = $imageName;
             $model->save(false);
             return $this->redirect(['view', 'id' => $model->id]);

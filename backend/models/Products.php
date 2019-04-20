@@ -62,7 +62,7 @@ class Products extends \yii\db\ActiveRecord
             'amount' => 'Amount',
             'quantity' => 'Quantity',
             'availability' => 'Availability',
-            'prod_condition' => 'Prod Condition',
+            'prod_condition' => 'Product Condition',
             'brand' => 'Brand',
             'stock' => 'Stock',
             'image' => 'Image',
@@ -70,5 +70,10 @@ class Products extends \yii\db\ActiveRecord
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];
+    }
+
+    public function getPictures()
+    {
+        return $this->hasMany(Pictures::className(), ['product_id' => 'id']);
     }
 }
